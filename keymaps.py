@@ -1,5 +1,7 @@
 import bpy
 
+from bpy.app.handlers import persistent
+
 
 KEYMAP_NAMES = (
     "3D View", "Pose", "Object Mode", "Curve", "Curves",
@@ -15,20 +17,22 @@ TRANSFORM_OPERATORS = {
 addon_keymaps = []
 
 
-def register_keymaps():
+def _perform_keymap_registration():
     if addon_keymaps:
-        return
+        return True
 
     window_manager = bpy.context.window_manager
 
     if window_manager is None:
-        return
+        return False
 
     addon_keyconfig = window_manager.keyconfigs.addon
     user_keyconfig = window_manager.keyconfigs.user
 
     if addon_keyconfig is None or user_keyconfig is None:
-        return
+        return False
+
+    registered = False
 
     for name in KEYMAP_NAMES:
         source_keymap = user_keyconfig.keymaps.get(name)
@@ -47,9 +51,9 @@ def register_keymaps():
                 continue
 
             if item.properties and any(
-                item.properties.is_property_set(prop.identifier)
+                prop.identifier != "rna_type"
+                and item.properties.is_property_set(prop.identifier)
                 for prop in item.properties.bl_rna.properties
-                if prop.identifier != "rna_type"
             ):
                 continue
 
@@ -79,9 +83,36 @@ def register_keymaps():
             )
 
             addon_keymaps.append((addon_keymap, addon_item))
+            registered = True
+
+    return registered
+
+
+@persistent
+def _keymaps_load_post_handler(dummy):
+    if _perform_keymap_registration():
+        if _keymaps_load_post_handler in bpy.app.handlers.load_post:
+            bpy.app.handlers.load_post.remove(
+                _keymaps_load_post_handler
+            )
+
+
+def register_keymaps():
+    if _perform_keymap_registration():
+        return
+
+    if _keymaps_load_post_handler not in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.append(
+            _keymaps_load_post_handler
+        )
 
 
 def unregister_keymaps():
+    if _keymaps_load_post_handler in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(
+            _keymaps_load_post_handler
+        )
+
     for keymap, item in reversed(addon_keymaps):
         try:
             keymap.keymap_items.remove(item)

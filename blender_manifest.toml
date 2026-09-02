@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "gizmo_plus"
-version = "0.3.2"
+version = "0.3.3"
 name = "Gizmo Plus"
 tagline = "Adds gizmos to Blender's standard modal transforms"
 maintainer = "Avaranky"
