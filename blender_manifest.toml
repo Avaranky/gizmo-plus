@@ -1,0 +1,18 @@
+schema_version = "1.0.0"
+
+id = "gizmo_plus"
+version = "0.3.2"
+name = "Gizmo Plus"
+tagline = "Adds gizmos to Blender's standard modal transforms"
+maintainer = "Avaranky"
+type = "add-on"
+website = "https://github.com/Avaranky/gizmo-plus"
+
+blender_version_min = "5.2.0"
+license = [
+    "SPDX:GPL-3.0-or-later",
+]
+tags = [
+    "3D View",
+    "User Interface",
+]
