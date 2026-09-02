@@ -30,6 +30,8 @@ Gizmo Plus can be configured from its Add-on Preferences and from the Gizmo Plus
 - **Show N-Panel** — shows or hides the Gizmo Plus panel in the 3D View sidebar.
 - **Gizmo Plus Shortcuts** — shows the shortcuts used by Gizmo Plus and allows them to be edited.
 
+If you prefer to keep the N-panel uncluttered, the Gizmo Plus panel can be hidden using the Show N-Panel option in the Add-on Preferences.
+
 ## Installation
 
 Download the Gizmo Plus `.zip` package and install it using either method:

@@ -16,3 +16,14 @@ tags = [
     "3D View",
     "User Interface",
 ]
+
+[build]
+paths_exclude_pattern = [
+    "__pycache__/",
+    ".git",
+    ".gitignore",
+    ".gitattributes",
+    ".vscode/",
+    "*.zip",
+    "README.md",
+]
