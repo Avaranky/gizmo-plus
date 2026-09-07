@@ -48,6 +48,21 @@ class GIZMOPLUS_OT_transform_base(Operator):
         if self.phase == "KEYPRESS":
             return self._keypress_phase(context, event)
 
+        # EN:
+        # Keep Gizmo Plus alive while Blender's native transform operator
+        # is running. Finishing this operator too early would release the
+        # cursor grab used by the native transform.
+        #
+        # RU:
+        # Оставляем Gizmo Plus активным, пока работает нативный оператор
+        # трансформации Blender. Если завершить наш оператор слишком рано,
+        # Blender снимет захват курсора, используемый нативной трансформацией.
+        if self.phase == "TRANSFORM":
+            if self._native_transform_running(context):
+                return {"RUNNING_MODAL", "PASS_THROUGH"}
+
+            return {"FINISHED", "PASS_THROUGH"}
+
         if (
             time.monotonic() - self.wait_started
             >= preferences.activation_delay
@@ -76,14 +91,31 @@ class GIZMOPLUS_OT_transform_base(Operator):
                 constraint_axis=constraint_axis,
             )
 
-            return {"FINISHED"}
+            # EN:
+            # Do not finish Gizmo Plus here. Switch to TRANSFORM phase
+            # and let the native transform own the interaction.
+            #
+            # RU:
+            # Не завершаем Gizmo Plus здесь. Переходим в фазу TRANSFORM
+            # и позволяем нативной трансформации управлять взаимодействием.
+            self.phase = "TRANSFORM"
+
+            return {"RUNNING_MODAL", "PASS_THROUGH"}
 
         if (
             event.value == "PRESS"
             and event.type == self.trigger_key
         ):
             if self._handle_repeat(context):
-                return {"FINISHED"}
+                # EN:
+                # Repeat transforms such as Vert Slide and Trackball also
+                # start native modal operators, so the same rule applies.
+                #
+                # RU:
+                # Повторные операции вроде Vert Slide и Trackball тоже
+                # запускают нативные modal-операторы, поэтому правило то же.
+                self.phase = "TRANSFORM"
+                return {"RUNNING_MODAL", "PASS_THROUGH"}
 
             return {"FINISHED", "PASS_THROUGH"}
 
@@ -99,7 +131,19 @@ class GIZMOPLUS_OT_transform_base(Operator):
                 or delta_y > MOUSE_THRESHOLD
             ):
                 self._invoke_transform()
-                return {"FINISHED"}
+
+                # EN:
+                # Previously this returned FINISHED immediately after
+                # starting Blender's transform. That could release the
+                # continuous cursor grab. Keep this operator alive instead.
+                #
+                # RU:
+                # Раньше сразу после запуска трансформации Blender здесь
+                # возвращался FINISHED. Это могло снять непрерывный захват
+                # курсора. Теперь наш оператор остаётся активным.
+                self.phase = "TRANSFORM"
+
+                return {"RUNNING_MODAL", "PASS_THROUGH"}
 
         if (
             event.type == self.trigger_key
@@ -118,6 +162,20 @@ class GIZMOPLUS_OT_transform_base(Operator):
             return {"RUNNING_MODAL"}
 
         return {"PASS_THROUGH"}
+
+    # EN:
+    # Check whether Blender still has a native TRANSFORM_OT_* modal
+    # operator running in the current window.
+    #
+    # RU:
+    # Проверяем, работает ли в текущем окне нативный modal-оператор
+    # Blender семейства TRANSFORM_OT_*.
+    def _native_transform_running(self, context):
+        return any(
+            op is not self
+            and op.bl_idname.startswith("TRANSFORM_OT_")
+            for op in context.window.modal_operators
+        )
 
     def _invoke_transform(self, **kwargs):
         raise NotImplementedError
